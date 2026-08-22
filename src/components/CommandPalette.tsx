@@ -23,7 +23,20 @@ export function CommandPalette({
   onSelectModel,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('')
+  const [activeIndex, setActiveIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const results = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    if (!needle) return models.slice(0, 7)
+    return models
+      .filter((model) => [model.provider, model.model, model.modality, model.availability].join(' ').toLowerCase().includes(needle))
+      .slice(0, 8)
+  }, [models, query])
+
+  useEffect(() => {
+    setActiveIndex(0)
+  }, [query, open])
 
   useEffect(() => {
     if (!open) return
@@ -39,17 +52,28 @@ export function CommandPalette({
     }
   }, [open, onClose])
 
-  const results = useMemo(() => {
-    const needle = query.trim().toLowerCase()
-    if (!needle) return models.slice(0, 7)
-    return models
-      .filter((model) => [model.provider, model.model, model.modality, model.availability].join(' ').toLowerCase().includes(needle))
-      .slice(0, 8)
-  }, [models, query])
-
   const jump = (hash: string) => {
     window.location.hash = hash
     onClose()
+  }
+
+  const choose = (model: ModelRecord) => {
+    onSelectModel(model)
+    onClose()
+  }
+
+  const onSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (results.length === 0) return
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setActiveIndex((current) => (current + 1) % results.length)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActiveIndex((current) => (current - 1 + results.length) % results.length)
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      choose(results[Math.min(activeIndex, results.length - 1)])
+    }
   }
 
   return (
@@ -79,8 +103,10 @@ export function CommandPalette({
                 ref={inputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={onSearchKeyDown}
                 placeholder="Search models, providers, capabilities…"
                 aria-label="Search SpecShift intelligence"
+                aria-activedescendant={results[activeIndex] ? `command-model-${results[activeIndex].id}` : undefined}
               />
               <button type="button" onClick={onClose} aria-label="Close command palette"><X size={15} /></button>
             </div>
@@ -117,15 +143,14 @@ export function CommandPalette({
               <div className="command-results-head"><span className="command-label">{query ? 'Matches' : 'Models'}</span><small>{results.length} shown</small></div>
               {results.length === 0 ? (
                 <div className="command-empty"><Search size={16} /><span>No intelligence matches “{query}”.</span></div>
-              ) : results.map((model) => (
+              ) : results.map((model, index) => (
                 <button
-                  className="command-model"
+                  id={`command-model-${model.id}`}
+                  className={`command-model ${activeIndex === index ? 'active' : ''}`}
                   type="button"
                   key={model.id}
-                  onClick={() => {
-                    onSelectModel(model)
-                    onClose()
-                  }}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => choose(model)}
                 >
                   <span className="provider-monogram command-monogram">{model.provider.slice(0, 2).toUpperCase()}</span>
                   <span><strong>{model.model}</strong><small>{model.provider} · {model.modality}</small></span>
@@ -135,7 +160,7 @@ export function CommandPalette({
               ))}
             </div>
 
-            <footer className="command-footer"><span><kbd>↑</kbd><kbd>↓</kbd> browse</span><span><kbd>esc</kbd> close</span><span><kbd>⌘</kbd><kbd>K</kbd> toggle</span></footer>
+            <footer className="command-footer"><span><kbd>↑</kbd><kbd>↓</kbd> browse</span><span><kbd>enter</kbd> open</span><span><kbd>esc</kbd> close</span><span><kbd>⌘</kbd><kbd>K</kbd> toggle</span></footer>
           </motion.section>
         </motion.div>
       )}
