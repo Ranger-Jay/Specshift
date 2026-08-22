@@ -2,7 +2,7 @@
 
 All notable SpecShift milestones are documented here.
 
-## v0.002-dev — 2026-08-22
+## v0.002 — 2026-08-22
 
 ### Added
 - Canonical normalized AI model intelligence domain contract.
@@ -13,9 +13,9 @@ All notable SpecShift milestones are documented here.
 - Unit tests for validation and snapshot diffing.
 - CI verification for unit tests and production builds.
 
-### Status
-- In development on `feat/data-pipeline`.
-- Live Bright Data collector wiring is intentionally deferred to v0.003.
+### Release verification
+- Pull-request CI passed the unit-test suite and production TypeScript/Vite build before release.
+- Live Bright Data collector wiring remains intentionally scoped to v0.003.
 
 ## v0.001 — 2026-08-22
 
