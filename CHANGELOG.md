@@ -2,7 +2,7 @@
 
 All notable SpecShift milestones are documented here.
 
-## v0.003-dev — 2026-08-22
+## v0.003 — 2026-08-22
 
 ### Added
 - Server-side Bright Data provider registry for OpenAI, Anthropic, and Google Gemini.
@@ -14,9 +14,14 @@ All notable SpecShift milestones are documented here.
 - Fault-injection tests for authentication, transient failures, malformed responses, and row normalization.
 - Reproducible CLI runbook for custom scraper creation, execution, self-healing, approval, and rerun evidence.
 
-### Status
-- In development on `feat/brightdata-runtime`.
-- Real `c_*` Collector IDs and Bright Data account authorization are external runtime configuration and are never committed.
+### Fixed
+- Corrected a test-only TypeScript assertion discovered by the expanded server verification gate.
+
+### Release verification
+- 15 unit tests passed.
+- React production build passed.
+- Server/API strict TypeScript verification passed on the pre-release gate.
+- Real `c_*` Collector IDs and Bright Data account authorization remain external runtime configuration and are never committed.
 
 ## v0.002 — 2026-08-22
 
