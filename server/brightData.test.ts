@@ -39,7 +39,14 @@ describe('BrightDataClient', () => {
 
     const client = new BrightDataClient({ token: 'bad-token', fetchImpl, retries: 3, retryBaseMs: 0 })
 
-    await expect(client.dataset('j_run123')).rejects.toMatchObject<Partial<BrightDataError>>({ status: 401 })
+    try {
+      await client.dataset('j_run123')
+      throw new Error('Expected the Bright Data request to fail.')
+    } catch (error) {
+      expect(error).toBeInstanceOf(BrightDataError)
+      expect((error as BrightDataError).status).toBe(401)
+    }
+
     expect(fetchImpl).toHaveBeenCalledTimes(1)
   })
 
