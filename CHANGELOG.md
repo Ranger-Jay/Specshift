@@ -2,7 +2,7 @@
 
 All notable SpecShift milestones are documented here.
 
-## v0.004-dev — 2026-08-22
+## v0.004 — 2026-08-22
 
 ### Added
 - Live provider orchestration hook for Bright Data collector discovery, trigger, polling, and result states.
@@ -23,8 +23,10 @@ All notable SpecShift milestones are documented here.
 - Added presentation-contract coverage for pricing, context formatting, source provenance, metrics, and change events.
 - Added scan-history signal normalization tests.
 
-### Status
-- In development on `feat/live-intelligence-ui` until the exact release commit passes CI.
+### Release verification
+- 21 unit tests passed across validation, diffing, Bright Data runtime, normalization, presentation, and scan-history behavior.
+- React production build passed.
+- Server/API strict TypeScript verification passed on the pre-release gate.
 
 ## v0.003 — 2026-08-22
 
