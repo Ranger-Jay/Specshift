@@ -1,5 +1,5 @@
-export type CollectorHealth = 'healthy' | 'healed' | 'drift'
-export type ChangeType = 'price' | 'context' | 'new' | 'deprecated'
+export type CollectorHealth = 'healthy' | 'healed' | 'drift' | 'running' | 'error' | 'setup'
+export type ChangeType = 'price' | 'context' | 'new' | 'deprecated' | 'availability'
 
 export interface Metric {
   label: string
@@ -16,8 +16,9 @@ export interface ModelRecord {
   inputPrice: string
   outputPrice: string
   context: string
-  availability: 'Live' | 'Preview' | 'Deprecated'
+  availability: 'Live' | 'Preview' | 'Deprecated' | 'Unknown'
   change: string
+  sourceUrl?: string
 }
 
 export interface ChangeEvent {
@@ -39,4 +40,6 @@ export interface Collector {
   latency: string
   records: number
   lastRun: string
+  sourceUrl?: string
+  statusLabel?: string
 }

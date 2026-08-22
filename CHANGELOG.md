@@ -2,6 +2,32 @@
 
 All notable SpecShift milestones are documented here.
 
+## v0.004 — 2026-08-22
+
+### Added
+- Live provider orchestration hook for Bright Data collector discovery, trigger, polling, and result states.
+- Per-provider provenance states: setup, idle, queued, running, ready, drift, cached, and error.
+- Last-known-good snapshot persistence so invalid candidate output cannot overwrite trusted intelligence.
+- Real snapshot diff integration for pricing, context, availability, model additions, and removals.
+- Scan-history signal visualization backed by actual validated change counts after live scans.
+- Explicit Live / Mixed / Live-ready / Demo data labeling across the dashboard.
+- Runtime collector provenance including stable non-secret Collector IDs when available.
+- Clearly labeled demo records for environments where live credentials are not configured.
+- Architecture documentation for validation, baseline promotion, drift quarantine, and healing.
+
+### Changed
+- The premium dashboard now derives metrics, model rows, collector health, and change events from the normalized intelligence pipeline instead of fixed UI mock records.
+- The resilience panel is explicitly presented as a controlled UI replay; actual healing evidence is performed with the Bright Data CLI.
+
+### Tests
+- Added presentation-contract coverage for pricing, context formatting, source provenance, metrics, and change events.
+- Added scan-history signal normalization tests.
+
+### Release verification
+- 21 unit tests passed across validation, diffing, Bright Data runtime, normalization, presentation, and scan-history behavior.
+- React production build passed.
+- Server/API strict TypeScript verification passed on the pre-release gate.
+
 ## v0.003 — 2026-08-22
 
 ### Added

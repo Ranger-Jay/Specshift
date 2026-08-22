@@ -21,12 +21,11 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
-  Terminal,
   X,
   Zap,
 } from 'lucide-react'
-import { changeEvents, collectors, metrics, models, signalPoints } from './mockData'
-import type { CollectorHealth } from './types'
+import { useIntelligence } from './hooks/useIntelligence'
+import type { CollectorHealth, Metric } from './types'
 import './styles.css'
 
 type DemoState = 'healthy' | 'drift' | 'healed'
@@ -59,6 +58,9 @@ function HealthPill({ health }: { health: CollectorHealth }) {
     healthy: 'Healthy',
     healed: 'Self-healed',
     drift: 'Drift detected',
+    running: 'Collecting',
+    error: 'Error',
+    setup: 'Setup needed',
   }
   return (
     <span className={`health-pill health-${health}`}>
@@ -68,7 +70,7 @@ function HealthPill({ health }: { health: CollectorHealth }) {
   )
 }
 
-function MetricCard({ metric, index }: { metric: (typeof metrics)[number]; index: number }) {
+function MetricCard({ metric, index }: { metric: Metric; index: number }) {
   return (
     <motion.article
       className="metric-card glass-card"
@@ -93,24 +95,25 @@ function MetricCard({ metric, index }: { metric: (typeof metrics)[number]; index
   )
 }
 
-function SignalGraph() {
+function SignalGraph({ points }: { points: number[] }) {
   const geometry = useMemo(() => {
     const width = 620
     const height = 180
     const max = 100
-    const step = width / (signalPoints.length - 1)
-    const coords = signalPoints.map((value, index) => ({
+    const safePoints = points.length > 1 ? points : [0, 0]
+    const step = width / (safePoints.length - 1)
+    const coords = safePoints.map((value, index) => ({
       x: index * step,
-      y: height - (value / max) * height,
+      y: height - (Math.max(0, Math.min(value, max)) / max) * height,
     }))
     const path = coords.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ')
     const area = `${path} L ${width} ${height} L 0 ${height} Z`
     return { path, area, coords }
-  }, [])
+  }, [points])
 
   return (
     <div className="signal-graph-wrap">
-      <svg className="signal-graph" viewBox="0 0 620 180" role="img" aria-label="Intelligence signal activity increasing over time">
+      <svg className="signal-graph" viewBox="0 0 620 180" role="img" aria-label="Change signal activity across recent scans">
         <defs>
           <linearGradient id="signalStroke" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="#63e7ff" />
@@ -137,7 +140,7 @@ function SignalGraph() {
           fill="url(#signalArea)"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.8 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
         />
         <motion.path
           d={geometry.path}
@@ -149,23 +152,23 @@ function SignalGraph() {
           filter="url(#glow)"
           initial={{ pathLength: 0 }}
           animate={{ pathLength: 1 }}
-          transition={{ duration: 1.4, ease: 'easeInOut' }}
+          transition={{ duration: 1.1, ease: 'easeInOut' }}
         />
-        {geometry.coords.slice(-4).map((point, index) => (
+        {geometry.coords.slice(-4).map((point, index, visible) => (
           <motion.circle
             key={`${point.x}-${point.y}`}
             cx={point.x}
             cy={point.y}
-            r={index === 3 ? 5 : 3}
-            className={index === 3 ? 'graph-point graph-point-active' : 'graph-point'}
+            r={index === visible.length - 1 ? 5 : 3}
+            className={index === visible.length - 1 ? 'graph-point graph-point-active' : 'graph-point'}
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 0.8 + index * 0.08 }}
+            transition={{ delay: 0.5 + index * 0.08 }}
           />
         ))}
       </svg>
       <div className="graph-axis">
-        <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>Now</span>
+        <span>Older</span><span>Scan −3</span><span>Scan −2</span><span>Scan −1</span><span>Latest</span>
       </div>
     </div>
   )
@@ -197,39 +200,50 @@ function CollectorFlow({ demoState }: { demoState: DemoState }) {
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [demoState, setDemoState] = useState<DemoState>('healthy')
-
-  const displayedCollectors = collectors.map((collector, index) => {
-    if (index !== 1) return collector
-    if (demoState === 'drift') return { ...collector, health: 'drift' as const, successRate: '61.2%', records: 2 }
-    if (demoState === 'healed') return { ...collector, health: 'healed' as const, successRate: '100%', records: 5, lastRun: 'just now' }
-    return collector
-  })
+  const intelligence = useIntelligence()
 
   const demoCopy = {
     healthy: {
-      eyebrow: 'Resilience demo',
-      title: 'All collectors nominal',
-      detail: 'Trigger a controlled schema drift to preview the recovery experience.',
-      button: 'Simulate drift',
+      eyebrow: 'Controlled resilience replay',
+      title: 'Collector output nominal',
+      detail: 'Replay a controlled schema failure to see how SpecShift quarantines drift before stale data replaces a known-good baseline.',
+      button: 'Simulate schema drift',
       icon: Activity,
     },
     drift: {
-      eyebrow: 'Schema degradation',
-      title: 'Collector drift detected',
-      detail: 'Required pricing fields dropped below validation threshold.',
-      button: 'Run self-heal',
+      eyebrow: 'Controlled schema failure',
+      title: 'Drift quarantined',
+      detail: 'Required pricing fields failed validation. The prior validated snapshot remains active while the collector is repaired.',
+      button: 'Preview healed state',
       icon: RefreshCw,
     },
     healed: {
-      eyebrow: 'Recovery complete',
-      title: 'Collector restored',
-      detail: 'Structured output is valid again with collector identity preserved.',
-      button: 'Reset demo',
+      eyebrow: 'Recovery replay',
+      title: 'Stable collector restored',
+      detail: 'The repaired collector returns valid structured output while preserving its stable Collector ID and downstream integration.',
+      button: 'Reset replay',
       icon: Check,
     },
   }[demoState]
 
   const DemoIcon = demoCopy.icon
+  const ModeIcon = intelligence.mode === 'live'
+    ? ShieldCheck
+    : intelligence.mode === 'mixed'
+      ? Gauge
+      : intelligence.mode === 'demo'
+        ? Sparkles
+        : intelligence.mode === 'checking'
+          ? RefreshCw
+          : Database
+
+  const signalIndex = intelligence.signalPoints.at(-1) ?? 0
+  const canScan = intelligence.configuredCount > 0 && intelligence.tokenConfigured
+  const scanLabel = intelligence.isRefreshing
+    ? 'Scanning live sources…'
+    : canScan
+      ? 'Scan live sources'
+      : 'Preview resilience'
 
   const advanceDemo = () => {
     setDemoState((current) => {
@@ -237,6 +251,14 @@ function App() {
       if (current === 'drift') return 'healed'
       return 'healthy'
     })
+  }
+
+  const primaryAction = () => {
+    if (canScan) {
+      void intelligence.refreshAll()
+    } else {
+      advanceDemo()
+    }
   }
 
   return (
@@ -272,20 +294,20 @@ function App() {
 
         <div className="sidebar-spacer" />
 
-        <div className="system-card">
+        <div className={`system-card system-${intelligence.mode}`}>
           <div className="system-card-icon"><Bot size={17} /></div>
           <div>
             <span>Bright Data bridge</span>
-            <strong>Adapter ready</strong>
+            <strong>{intelligence.configuredCount}/3 collectors configured</strong>
           </div>
           <span className="system-pulse" />
         </div>
 
         <div className="sidebar-footer">
-          <div className="avatar">SJ</div>
+          <div className="avatar">SS</div>
           <div className="account-copy">
-            <strong>SpecShift Lab</strong>
-            <span>Hackathon build</span>
+            <strong>SpecShift</strong>
+            <span>Self-healing intelligence</span>
           </div>
           <Command size={15} />
         </div>
@@ -316,7 +338,10 @@ function App() {
           </div>
           <div className="topbar-actions">
             <button className="search-button" type="button"><Search size={15} /><span>Search intelligence</span><kbd>⌘ K</kbd></button>
-            <span className="prototype-badge"><Sparkles size={12} /> Prototype data</span>
+            <span className={`prototype-badge mode-badge mode-${intelligence.mode}`}>
+              <ModeIcon size={12} className={intelligence.mode === 'checking' ? 'spin-icon' : undefined} />
+              {intelligence.modeLabel}
+            </span>
           </div>
         </header>
 
@@ -325,13 +350,13 @@ function App() {
             <div className="hero-copy">
               <div className="eyebrow"><span className="eyebrow-dot" /> AI model intelligence layer</div>
               <h1>Know what changed.<br /><span>Before your stack does.</span></h1>
-              <p>SpecShift turns fragile provider pages into resilient, normalized intelligence—then detects pricing, capability, and availability shifts as they happen.</p>
+              <p>SpecShift turns fragile provider pages into resilient, normalized intelligence—then validates every extraction before pricing, capability, or availability changes reach downstream developers.</p>
               <div className="hero-actions">
-                <button className="primary-button" onClick={advanceDemo}>
-                  <Radar size={16} />
-                  {demoState === 'healthy' ? 'Run resilience demo' : demoCopy.button}
+                <button className="primary-button" onClick={primaryAction} disabled={intelligence.isRefreshing}>
+                  <Radar size={16} className={intelligence.isRefreshing ? 'spin-icon' : undefined} />
+                  {scanLabel}
                 </button>
-                <a className="text-link" href="#collectors">Inspect collectors <ChevronRight size={14} /></a>
+                <a className="text-link" href="#collectors">Inspect provenance <ChevronRight size={14} /></a>
               </div>
             </div>
 
@@ -347,32 +372,38 @@ function App() {
                 <span className="radar-node node-a"><i />OPENAI</span>
                 <span className="radar-node node-b"><i />ANTHROPIC</span>
                 <span className="radar-node node-c"><i />GOOGLE</span>
-                <span className="radar-caption">3 sources · 17 models</span>
+                <span className="radar-caption">3 sources · {intelligence.models.length} normalized models</span>
               </div>
             </div>
           </section>
 
+          <div className={`provenance-strip provenance-${intelligence.mode}`} role="status">
+            <ModeIcon size={15} className={intelligence.mode === 'checking' ? 'spin-icon' : undefined} />
+            <span><strong>{intelligence.modeLabel}</strong>{intelligence.runtimeMessage}</span>
+            {canScan && !intelligence.isRefreshing && <button type="button" onClick={() => void intelligence.refreshAll()}>Run scan</button>}
+          </div>
+
           <section className="metrics-grid" aria-label="Key intelligence metrics">
-            {metrics.map((metric, index) => <MetricCard metric={metric} index={index} key={metric.label} />)}
+            {intelligence.metrics.map((metric, index) => <MetricCard metric={metric} index={index} key={metric.label} />)}
           </section>
 
           <section className="dashboard-grid">
             <article className="glass-card intelligence-card">
               <div className="card-heading">
                 <div>
-                  <span className="section-kicker">Signal velocity</span>
-                  <h2>Change intelligence</h2>
+                  <span className="section-kicker">Scan history</span>
+                  <h2>Change signal</h2>
                 </div>
-                <div className="live-chip"><CircleDot size={13} /> monitoring</div>
+                <div className="live-chip"><CircleDot size={13} /> {intelligence.mode === 'demo' ? 'preview' : 'validated'}</div>
               </div>
               <div className="signal-summary">
-                <div><strong>86</strong><span>signal index</span></div>
-                <span className="summary-delta"><ArrowUpRight size={14} /> 18.4%</span>
+                <div><strong>{signalIndex}</strong><span>signal index</span></div>
+                <span className="summary-delta"><ArrowUpRight size={14} /> {intelligence.changes.length} latest deltas</span>
               </div>
-              <SignalGraph />
+              <SignalGraph points={intelligence.signalPoints} />
               <div className="provider-legend">
                 <span><i className="legend-cyan" /> Pricing</span>
-                <span><i className="legend-violet" /> Capabilities</span>
+                <span><i className="legend-violet" /> Context</span>
                 <span><i className="legend-magenta" /> Availability</span>
               </div>
             </article>
@@ -388,7 +419,7 @@ function App() {
               <p>{demoCopy.detail}</p>
               <CollectorFlow demoState={demoState} />
               <div className="terminal-mini">
-                <div className="terminal-bar"><span /><span /><span /><strong>collector.log</strong></div>
+                <div className="terminal-bar"><span /><span /><span /><strong>recovery.log</strong></div>
                 <AnimatePresence mode="wait">
                   <motion.div
                     className="terminal-lines"
@@ -397,25 +428,27 @@ function App() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                   >
-                    {demoState === 'healthy' && <><span><i>✓</i> schema.valid</span><span><i>✓</i> output.normalized</span><span><i>✓</i> snapshot.saved</span></>}
-                    {demoState === 'drift' && <><span className="terminal-error"><i>!</i> price.input → null</span><span className="terminal-error"><i>!</i> validation.failed</span><span><i>→</i> heal.ready</span></>}
-                    {demoState === 'healed' && <><span><i>✓</i> repair.approved</span><span><i>✓</i> collector.id preserved</span><span><i>✓</i> 5 records restored</span></>}
+                    {demoState === 'healthy' && <><span><i>✓</i> schema.valid</span><span><i>✓</i> baseline.promoted</span><span><i>✓</i> downstream.safe</span></>}
+                    {demoState === 'drift' && <><span className="terminal-error"><i>!</i> price.input → null</span><span className="terminal-error"><i>!</i> candidate.quarantined</span><span><i>→</i> baseline.preserved</span></>}
+                    {demoState === 'healed' && <><span><i>✓</i> repair.approved</span><span><i>✓</i> collector.id preserved</span><span><i>✓</i> candidate.promoted</span></>}
                   </motion.div>
                 </AnimatePresence>
               </div>
               <button className="demo-button" type="button" onClick={advanceDemo}><DemoIcon size={15} /> {demoCopy.button}</button>
-              <span className="demo-disclaimer">UI simulation · Bright Data command wiring next</span>
+              <span className="demo-disclaimer">Controlled UI replay · actual heal evidence uses Bright Data CLI with the same c_* Collector ID</span>
             </article>
           </section>
 
           <section className="lower-grid" id="changes">
             <article className="glass-card change-feed">
               <div className="card-heading">
-                <div><span className="section-kicker">Detected deltas</span><h2>Change stream</h2></div>
-                <button className="ghost-button" type="button">View all <ChevronRight size={14} /></button>
+                <div><span className="section-kicker">{intelligence.mode === 'demo' ? 'Example deltas' : 'Validated deltas'}</span><h2>Change stream</h2></div>
+                <span className="collector-count">{String(intelligence.changes.length).padStart(2, '0')}</span>
               </div>
               <div className="change-list">
-                {changeEvents.map((event) => (
+                {intelligence.changes.length === 0 ? (
+                  <div className="empty-state"><ShieldCheck size={18} /><div><strong>No changes since baseline</strong><span>Run another validated scan after provider data changes to populate this stream.</span></div></div>
+                ) : intelligence.changes.map((event) => (
                   <div className="change-row" key={event.id}>
                     <div className={`change-icon change-${event.type}`}><Activity size={15} /></div>
                     <div className="change-copy">
@@ -430,16 +463,17 @@ function App() {
 
             <article className="glass-card collector-card" id="collectors">
               <div className="card-heading">
-                <div><span className="section-kicker">Extraction layer</span><h2>Collector health</h2></div>
+                <div><span className="section-kicker">Bright Data extraction layer</span><h2>Collector provenance</h2></div>
                 <span className="collector-count">03</span>
               </div>
               <div className="collector-list">
-                {displayedCollectors.map((collector) => (
-                  <div className="collector-row" key={collector.id}>
+                {intelligence.collectors.map((collector) => (
+                  <div className="collector-row" key={`${collector.provider}-${collector.id}`}>
                     <div className="provider-monogram">{collector.provider.slice(0, 2).toUpperCase()}</div>
                     <div className="collector-copy">
                       <strong>{collector.provider}</strong>
                       <span>{collector.domain}</span>
+                      <code className="collector-id">{collector.id}</code>
                     </div>
                     <div className="collector-stats"><span>{collector.records} rec</span><span>{collector.lastRun}</span></div>
                     <HealthPill health={collector.health} />
@@ -451,14 +485,19 @@ function App() {
 
           <section className="glass-card models-card" id="models">
             <div className="card-heading models-heading">
-              <div><span className="section-kicker">Normalized contract</span><h2>Model intelligence</h2></div>
-              <div className="models-actions"><span>Updated 38s ago</span><button className="ghost-button" type="button"><RefreshCw size={13} /> Refresh</button></div>
+              <div><span className="section-kicker">Normalized data contract</span><h2>Model intelligence</h2></div>
+              <div className="models-actions">
+                <span>{intelligence.latestTimestamp ? `Live baseline ${new Date(intelligence.latestTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : intelligence.mode === 'demo' ? 'Demo preview values' : 'Awaiting first live baseline'}</span>
+                <button className="ghost-button" type="button" onClick={() => void intelligence.refreshAll()} disabled={!canScan || intelligence.isRefreshing}>
+                  <RefreshCw size={13} className={intelligence.isRefreshing ? 'spin-icon' : undefined} /> Refresh
+                </button>
+              </div>
             </div>
             <div className="table-wrap">
               <table>
                 <thead><tr><th>Provider / model</th><th>Modality</th><th>Input / 1M</th><th>Output / 1M</th><th>Context</th><th>Status</th><th>Latest signal</th></tr></thead>
                 <tbody>
-                  {models.map((model) => (
+                  {intelligence.models.map((model) => (
                     <tr key={model.id}>
                       <td><div className="model-name"><span>{model.provider.slice(0, 1)}</span><div><strong>{model.model}</strong><small>{model.provider}</small></div></div></td>
                       <td>{model.modality}</td>
@@ -475,8 +514,8 @@ function App() {
           </section>
 
           <footer className="page-footer">
-            <span><BrandMark /> SpecShift intelligence prototype</span>
-            <span><Code2 size={13} /> React · TypeScript · Bright Data adapter</span>
+            <span><BrandMark /> SpecShift · self-healing AI model intelligence</span>
+            <span><Code2 size={13} /> React · TypeScript · Bright Data Scraper Studio · {intelligence.modeLabel}</span>
           </footer>
         </motion.div>
       </main>
