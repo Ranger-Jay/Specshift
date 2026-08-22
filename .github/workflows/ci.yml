@@ -24,8 +24,5 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Run unit tests
-        run: npm test
-
-      - name: Type-check and build
-        run: npm run build
+      - name: Verify tests, client build, and server types
+        run: npm run verify
