@@ -2,6 +2,20 @@
 
 All notable SpecShift milestones are documented here.
 
+## v0.006.3 — 2026-08-23
+
+### Changed
+- Raised the Model intelligence table to a practical application-data scale, including headers, model names, provider labels, pricing/context values, status pills, filters, toolbar controls, and footer text.
+- Raised Collector provenance typography and row sizing so provider names, domains, stable Collector IDs, record counts, timestamps, and health states are readable at normal laptop zoom.
+- Preserved the existing dark visual system, layout, spacing rhythm, interactions, and dashboard hierarchy while improving operational readability.
+
+### Visual verification
+- Reviewed both table-readability preview iterations in Vercel before release promotion.
+- The final larger table and collector-provenance scale was visually approved on the branch preview.
+
+### Scope
+- Presentation-only refinement. No Bright Data runtime, provider configuration, collector behavior, API contract, normalized intelligence, validation, diffing, or data-trust behavior changed.
+
 ## v0.006.2 — 2026-08-23
 
 ### Changed
@@ -87,7 +101,7 @@ All notable SpecShift milestones are documented here.
 - Live provider orchestration hook for Bright Data collector discovery, trigger, polling, and result states.
 - Per-provider provenance states: setup, idle, queued, running, ready, drift, cached, and error.
 - Last-known-good snapshot persistence so invalid candidate output cannot overwrite trusted intelligence.
-- Real snapshot diff integration for pricing, context, availability, model additions, and removals.
+- Real snapshot diff integration for pricing, context limits, availability, model additions, and removals.
 - Scan-history signal visualization backed by actual validated change counts after live scans.
 - Explicit Live / Mixed / Live-ready / Demo data labeling across the dashboard.
 - Runtime collector provenance including stable non-secret Collector IDs when available.
