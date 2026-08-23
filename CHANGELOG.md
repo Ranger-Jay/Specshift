@@ -2,7 +2,7 @@
 
 All notable SpecShift milestones are documented here.
 
-## v0.005-dev — 2026-08-22
+## v0.005 — 2026-08-22
 
 ### Added
 - Global command palette with model search, direct navigation actions, and Cmd/Ctrl+K shortcut.
@@ -21,8 +21,9 @@ All notable SpecShift milestones are documented here.
 ### Tests
 - Added intelligence-export provenance and demo-labeling coverage.
 
-### Status
-- In development on `feat/premium-intelligence-experience` until the exact release commit passes CI.
+### Release verification
+- Pull-request CI passed before release promotion.
+- No Bright Data credential or data-trust semantics were changed in this milestone.
 
 ## v0.004 — 2026-08-22
 
