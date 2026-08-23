@@ -22,6 +22,14 @@ const text = (value: unknown): string | null => {
   return null
 }
 
+const sourceUrl = (value: unknown): string | null => {
+  const raw = text(value)
+  if (!raw) return null
+
+  const markdown = raw.match(/^\[(https?:\/\/[^\]]+)\]\((https?:\/\/[^)]+)\)$/)
+  return markdown?.[2] ?? raw
+}
+
 const numberValue = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) return value
   if (typeof value !== 'string') return null
@@ -60,12 +68,32 @@ const list = (value: unknown): string[] => {
 const availability = (value: unknown): ModelAvailability => {
   const raw = text(value)?.toLowerCase() ?? ''
   if (/deprecat|retir|sunset|legacy/.test(raw)) return 'deprecated'
-  if (/preview|beta|experimental|early access/.test(raw)) return 'preview'
+  if (/limited|preview|beta|experimental|early access/.test(raw)) return 'preview'
   if (/live|available|general availability|ga|active/.test(raw)) return 'live'
   return 'unknown'
 }
 
 const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+const candidateRows = (rows: unknown[]): unknown[] => rows.flatMap((value) => {
+  const row = asRecord(value)
+  if (!row) return [value]
+  return Array.isArray(row.models) ? row.models : [value]
+})
+
+const cleanAnthropicModel = (value: string): string => value
+  .replace(/\s*\((?:limited availability|retired)[^)]*\)\s*$/i, '')
+  .trim()
+
+const isAnthropicBaseModelRow = (
+  model: string,
+  inputPrice: number | null,
+  outputPrice: number | null,
+): boolean => {
+  if (!/^Claude\s+/i.test(model)) return false
+  if (/\s(?:\/|,|\band\b)\s/i.test(model)) return false
+  return inputPrice !== null && outputPrice !== null
+}
 
 export function normalizeBrightDataRows(
   provider: ProviderSlug,
@@ -78,37 +106,46 @@ export function normalizeBrightDataRows(
   }
 
   const config = getProviderConfig(provider)
-  const models: NormalizedModel[] = []
+  const models = new Map<string, NormalizedModel>()
 
-  rows.forEach((value) => {
+  candidateRows(rows).forEach((value) => {
     const row = asRecord(value)
     if (!row) return
 
-    const model = text(first(row, ['model', 'model_name', 'name', 'model_id', 'id']))
-    if (!model) return
+    const rawModel = text(first(row, ['model', 'model_name', 'name', 'model_id', 'id']))
+    if (!rawModel) return
 
-    const sourceUrl =
-      text(first(row, ['source_url', 'sourceUrl', 'url', 'documentation_url', 'pricing_url'])) ?? config.sourceUrl
+    const model = provider === 'anthropic' ? cleanAnthropicModel(rawModel) : rawModel
+    const inputPrice = numberValue(first(row, [
+      'input_price_per_million',
+      'inputPricePerMillion',
+      'input_price',
+      'input_cost',
+    ]))
+    const outputPrice = numberValue(first(row, [
+      'output_price_per_million',
+      'outputPricePerMillion',
+      'output_price',
+      'output_cost',
+    ]))
 
-    models.push({
-      key: `${provider}:${slugify(model)}`,
+    if (provider === 'anthropic' && !isAnthropicBaseModelRow(model, inputPrice, outputPrice)) return
+
+    const key = `${provider}:${slugify(model)}`
+    if (models.has(key)) return
+
+    const rowSourceUrl =
+      sourceUrl(first(row, ['source_url', 'sourceUrl', 'url', 'documentation_url', 'pricing_url'])) ?? config.sourceUrl
+
+    models.set(key, {
+      key,
       provider: config.label,
       model,
       modalities: list(first(row, ['modalities', 'modality', 'input_modalities', 'capabilities'])),
       pricing: {
         currency: 'USD',
-        inputPerMillion: numberValue(first(row, [
-          'input_price_per_million',
-          'inputPricePerMillion',
-          'input_price',
-          'input_cost',
-        ])),
-        outputPerMillion: numberValue(first(row, [
-          'output_price_per_million',
-          'outputPricePerMillion',
-          'output_price',
-          'output_cost',
-        ])),
+        inputPerMillion: inputPrice,
+        outputPerMillion: outputPrice,
       },
       limits: {
         contextTokens: integerValue(first(row, [
@@ -119,7 +156,7 @@ export function normalizeBrightDataRows(
         ])),
       },
       availability: availability(first(row, ['availability', 'status', 'lifecycle', 'release_stage'])),
-      sourceUrl,
+      sourceUrl: rowSourceUrl,
       scrapedAt: capturedAt,
     })
   })
@@ -128,6 +165,6 @@ export function normalizeBrightDataRows(
     collectorId,
     source: config.sourceUrl,
     capturedAt,
-    models,
+    models: [...models.values()],
   }
 }
