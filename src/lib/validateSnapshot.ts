@@ -1,4 +1,4 @@
-import type { CollectorSnapshot, NormalizedModel, ValidationIssue, ValidationReport } from '../domain/intelligence'
+import type { CollectorSnapshot, NormalizedModel, ValidationIssue, ValidationReport } from '../domain/intelligence.js'
 
 const REQUIRED_MODEL_FIELDS: Array<keyof Pick<NormalizedModel, 'key' | 'provider' | 'model' | 'sourceUrl' | 'scrapedAt'>> = [
   'key',
