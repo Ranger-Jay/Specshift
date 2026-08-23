@@ -2,6 +2,29 @@
 
 All notable SpecShift milestones are documented here.
 
+## v0.005 — 2026-08-22
+
+### Added
+- Global command palette with model search, direct navigation actions, and Cmd/Ctrl+K shortcut.
+- Keyboard result navigation with Arrow Up/Down, Enter, and Escape.
+- Model intelligence detail drawer with normalized pricing/context, provenance, and direct public source link.
+- Provider filter chips and keyboard-accessible model rows.
+- Client-side JSON intelligence export with explicit provenance metadata.
+- Cinematic live-scan progress treatment and premium interaction polish.
+- Branded SVG favicon and expanded social/search metadata.
+- Reduced-motion behavior and stronger focus-visible accessibility treatment.
+- UX/accessibility contract documentation.
+
+### Fixed
+- Implemented the keyboard browsing behavior advertised by the command-palette shortcut hints.
+
+### Tests
+- Added intelligence-export provenance and demo-labeling coverage.
+
+### Release verification
+- Pull-request CI passed before release promotion.
+- No Bright Data credential or data-trust semantics were changed in this milestone.
+
 ## v0.004 — 2026-08-22
 
 ### Added
