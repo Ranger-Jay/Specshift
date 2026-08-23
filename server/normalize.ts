@@ -6,6 +6,11 @@ type UnknownRecord = Record<string, unknown>
 const asRecord = (value: unknown): UnknownRecord | null =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as UnknownRecord) : null
 
+const unwrapValue = (value: unknown): unknown => {
+  const record = asRecord(value)
+  return record && 'value' in record ? record.value : value
+}
+
 const first = (row: UnknownRecord, keys: string[]): unknown => {
   for (const key of keys) {
     if (row[key] !== undefined && row[key] !== null) return row[key]
@@ -14,19 +19,29 @@ const first = (row: UnknownRecord, keys: string[]): unknown => {
 }
 
 const text = (value: unknown): string | null => {
-  if (typeof value === 'string') {
-    const trimmed = value.trim()
+  const raw = unwrapValue(value)
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim()
     return trimmed.length > 0 ? trimmed : null
   }
-  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  if (typeof raw === 'number' && Number.isFinite(raw)) return String(raw)
   return null
 }
 
-const numberValue = (value: unknown): number | null => {
-  if (typeof value === 'number' && Number.isFinite(value)) return value
-  if (typeof value !== 'string') return null
+const sourceUrl = (value: unknown): string | null => {
+  const raw = text(value)
+  if (!raw) return null
 
-  const cleaned = value
+  const markdown = raw.match(/^\[(https?:\/\/[^\]]+)\]\((https?:\/\/[^)]+)\)$/)
+  return markdown?.[2] ?? raw
+}
+
+const numberValue = (value: unknown): number | null => {
+  const raw = unwrapValue(value)
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw
+  if (typeof raw !== 'string') return null
+
+  const cleaned = raw
     .replace(/\$/g, '')
     .replace(/,/g, '')
     .replace(/\s*(USD|tokens?|per\s+million|\/\s*1M|\/1M).*$/i, '')
@@ -37,17 +52,18 @@ const numberValue = (value: unknown): number | null => {
 }
 
 const integerValue = (value: unknown): number | null => {
-  if (typeof value === 'number' && Number.isFinite(value)) return Math.round(value)
-  if (typeof value !== 'string') return null
+  const raw = unwrapValue(value)
+  if (typeof raw === 'number' && Number.isFinite(raw)) return Math.round(raw)
+  if (typeof raw !== 'string') return null
 
-  const compactMatch = value.trim().match(/^([\d.]+)\s*([kKmM])?$/)
+  const compactMatch = raw.trim().match(/^([\d.]+)\s*([kKmM])?$/)
   if (compactMatch) {
     const base = Number.parseFloat(compactMatch[1])
     const multiplier = compactMatch[2]?.toLowerCase() === 'm' ? 1_000_000 : compactMatch[2]?.toLowerCase() === 'k' ? 1_000 : 1
     return Number.isFinite(base) ? Math.round(base * multiplier) : null
   }
 
-  const parsed = Number.parseInt(value.replace(/[^\d]/g, ''), 10)
+  const parsed = Number.parseInt(raw.replace(/[^\d]/g, ''), 10)
   return Number.isFinite(parsed) ? parsed : null
 }
 
@@ -60,12 +76,32 @@ const list = (value: unknown): string[] => {
 const availability = (value: unknown): ModelAvailability => {
   const raw = text(value)?.toLowerCase() ?? ''
   if (/deprecat|retir|sunset|legacy/.test(raw)) return 'deprecated'
-  if (/preview|beta|experimental|early access/.test(raw)) return 'preview'
-  if (/live|available|general availability|ga|active/.test(raw)) return 'live'
+  if (/limited|preview|beta|experimental|early access/.test(raw)) return 'preview'
+  if (/live|available|general availability|\bga\b|active|production/.test(raw)) return 'live'
   return 'unknown'
 }
 
 const slugify = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+const candidateRows = (rows: unknown[]): unknown[] => rows.flatMap((value) => {
+  const row = asRecord(value)
+  if (!row) return [value]
+  return Array.isArray(row.models) ? row.models : [value]
+})
+
+const cleanAnthropicModel = (value: string): string => value
+  .replace(/\s*\((?:limited availability|retired)[^)]*\)\s*$/i, '')
+  .trim()
+
+const isAnthropicBaseModelRow = (
+  model: string,
+  inputPrice: number | null,
+  outputPrice: number | null,
+): boolean => {
+  if (!/^Claude\s+/i.test(model)) return false
+  if (/\s(?:\/|,|\band\b)\s/i.test(model)) return false
+  return inputPrice !== null && outputPrice !== null
+}
 
 export function normalizeBrightDataRows(
   provider: ProviderSlug,
@@ -78,37 +114,46 @@ export function normalizeBrightDataRows(
   }
 
   const config = getProviderConfig(provider)
-  const models: NormalizedModel[] = []
+  const models = new Map<string, NormalizedModel>()
 
-  rows.forEach((value) => {
+  candidateRows(rows).forEach((value) => {
     const row = asRecord(value)
     if (!row) return
 
-    const model = text(first(row, ['model', 'model_name', 'name', 'model_id', 'id']))
-    if (!model) return
+    const rawModel = text(first(row, ['model', 'model_name', 'name', 'model_id', 'id']))
+    if (!rawModel) return
 
-    const sourceUrl =
-      text(first(row, ['source_url', 'sourceUrl', 'url', 'documentation_url', 'pricing_url'])) ?? config.sourceUrl
+    const model = provider === 'anthropic' ? cleanAnthropicModel(rawModel) : rawModel
+    const inputPrice = numberValue(first(row, [
+      'input_price_per_million',
+      'inputPricePerMillion',
+      'input_price',
+      'input_cost',
+    ]))
+    const outputPrice = numberValue(first(row, [
+      'output_price_per_million',
+      'outputPricePerMillion',
+      'output_price',
+      'output_cost',
+    ]))
 
-    models.push({
-      key: `${provider}:${slugify(model)}`,
+    if (provider === 'anthropic' && !isAnthropicBaseModelRow(model, inputPrice, outputPrice)) return
+
+    const key = `${provider}:${slugify(model)}`
+    if (models.has(key)) return
+
+    const rowSourceUrl =
+      sourceUrl(first(row, ['source_url', 'sourceUrl', 'url', 'documentation_url', 'pricing_url'])) ?? config.sourceUrl
+
+    models.set(key, {
+      key,
       provider: config.label,
       model,
       modalities: list(first(row, ['modalities', 'modality', 'input_modalities', 'capabilities'])),
       pricing: {
         currency: 'USD',
-        inputPerMillion: numberValue(first(row, [
-          'input_price_per_million',
-          'inputPricePerMillion',
-          'input_price',
-          'input_cost',
-        ])),
-        outputPerMillion: numberValue(first(row, [
-          'output_price_per_million',
-          'outputPricePerMillion',
-          'output_price',
-          'output_cost',
-        ])),
+        inputPerMillion: inputPrice,
+        outputPerMillion: outputPrice,
       },
       limits: {
         contextTokens: integerValue(first(row, [
@@ -119,7 +164,7 @@ export function normalizeBrightDataRows(
         ])),
       },
       availability: availability(first(row, ['availability', 'status', 'lifecycle', 'release_stage'])),
-      sourceUrl,
+      sourceUrl: rowSourceUrl,
       scrapedAt: capturedAt,
     })
   })
@@ -128,6 +173,6 @@ export function normalizeBrightDataRows(
     collectorId,
     source: config.sourceUrl,
     capturedAt,
-    models,
+    models: [...models.values()],
   }
 }
