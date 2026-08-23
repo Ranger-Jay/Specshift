@@ -2,7 +2,7 @@
 
 All notable SpecShift milestones are documented here.
 
-## v0.006-dev — 2026-08-23
+## v0.006 — 2026-08-23
 
 ### Changed
 - Final live provider set is OpenAI, Anthropic, and Groq.
@@ -21,9 +21,14 @@ All notable SpecShift milestones are documented here.
 
 ### Documentation
 - Bright Data runbook now reflects the verified OpenAI / Anthropic / Groq collector set.
+- Added sanitized OpenAI healed-output evidence and same-Collector-ID recovery documentation.
 
-### Status
-- In development on `feat/final-provider-alignment` until the exact release commit passes CI.
+### Fixed
+- Anthropic lifecycle suffix normalization now tolerates whitespace inside parenthetical status labels.
+
+### Release verification
+- The v0.006 pre-release head passed the full unit-test, React production-build, and server TypeScript verification gate.
+- Final provider runtime is aligned to the verified OpenAI / Anthropic / Groq collector set.
 
 ## v0.005 — 2026-08-22
 
