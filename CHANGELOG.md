@@ -2,6 +2,20 @@
 
 All notable SpecShift milestones are documented here.
 
+## v0.006.2 — 2026-08-23
+
+### Changed
+- Raised the smallest dashboard typography tiers across navigation, status metadata, provenance, metrics, graph labels, change-feed copy, collector details, tables, and helper text.
+- Increased contrast for muted information text while preserving the existing dark visual system, gradients, spacing, cards, and overall hierarchy.
+- Kept the dense intelligence-dashboard presentation intact while improving readability for normal laptop viewing and compressed 1080p demo playback.
+
+### Visual verification
+- Reviewed the Vercel branch preview before release promotion.
+- The revised typography and contrast were visually approved without requiring layout or design changes.
+
+### Scope
+- Presentation-only refinement. No Bright Data runtime, provider, collector, API, normalized intelligence, or data-trust behavior changed.
+
 ## v0.006.1 — 2026-08-23
 
 ### Fixed
