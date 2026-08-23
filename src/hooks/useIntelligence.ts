@@ -60,7 +60,7 @@ export interface ProviderRuntime extends ProviderDescriptor {
   error?: string
 }
 
-const PROVIDER_ORDER: ProviderSlug[] = ['openai', 'anthropic', 'google']
+const PROVIDER_ORDER: ProviderSlug[] = ['openai', 'anthropic', 'groq']
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const defaultDescriptor = (slug: ProviderSlug, demo: CollectorSnapshot): ProviderDescriptor => ({
@@ -84,12 +84,12 @@ export function useIntelligence() {
   const [providers, setProviders] = useState<Record<ProviderSlug, ProviderDescriptor>>(() => ({
     openai: defaultDescriptor('openai', demoSnapshots.openai),
     anthropic: defaultDescriptor('anthropic', demoSnapshots.anthropic),
-    google: defaultDescriptor('google', demoSnapshots.google),
+    groq: defaultDescriptor('groq', demoSnapshots.groq),
   }))
   const [runtime, setRuntime] = useState<Record<ProviderSlug, ProviderRuntime>>(() => ({
     openai: { ...defaultDescriptor('openai', demoSnapshots.openai), status: 'setup', origin: 'demo', snapshot: demoSnapshots.openai },
     anthropic: { ...defaultDescriptor('anthropic', demoSnapshots.anthropic), status: 'setup', origin: 'demo', snapshot: demoSnapshots.anthropic },
-    google: { ...defaultDescriptor('google', demoSnapshots.google), status: 'setup', origin: 'demo', snapshot: demoSnapshots.google },
+    groq: { ...defaultDescriptor('groq', demoSnapshots.groq), status: 'setup', origin: 'demo', snapshot: demoSnapshots.groq },
   }))
   const [configChecked, setConfigChecked] = useState(false)
   const [tokenConfigured, setTokenConfigured] = useState(false)

@@ -41,7 +41,7 @@ Command:
 ```bash
 npx -p @brightdata/cli bdata scraper create \
   https://developers.openai.com/api/docs/models \
-  "Return one row per model shown in the model catalog. Output exactly these fields: model, modalities, input_price_per_million, output_price_per_million, context_tokens, availability, source_url. model should use the displayed Model ID when present. input_price_per_million and output_price_per_million must be numeric USD per 1M text tokens with currency symbols and labels removed. context_tokens must be an integer token count, converting K and M notation. modalities must be an array of strings inferred only from explicitly listed capabilities. availability should be live, preview, deprecated, or unknown based only on page wording. source_url must be the public page URL. Use null for any field not stated; never infer prices or limits." 
+  "Return one row per model shown in the model catalog. Output exactly these fields: model, modalities, input_price_per_million, output_price_per_million, context_tokens, availability, source_url. model should use the displayed Model ID when present. input_price_per_million and output_price_per_million must be numeric USD per 1M text tokens with currency symbols and labels removed. context_tokens must be an integer token count, converting K and M notation. modalities must be an array of strings inferred only from explicitly listed capabilities. availability should be live, preview, deprecated, or unknown based only on page wording. source_url must be the public page URL. Use null for any field not stated; never infer prices or limits."
 ```
 
 Save the returned `c_*` ID as:
@@ -63,7 +63,7 @@ Command:
 ```bash
 npx -p @brightdata/cli bdata scraper create \
   https://platform.claude.com/docs/en/about-claude/pricing \
-  "Return one row per Claude model with standard model pricing. Output exactly these fields: model, modalities, input_price_per_million, output_price_per_million, context_tokens, availability, source_url. Use standard online text-token pricing in USD per 1M tokens, excluding batch discounts, prompt caching prices, tool charges, and third-party platform pricing. Prices must be numeric. If context length or modalities are not stated on this page, return null or an empty array rather than guessing. availability must be live, preview, deprecated, or unknown based only on page wording. source_url must be the public pricing page URL." 
+  "Return one row per Claude model with standard model pricing. Output exactly these fields: model, modalities, input_price_per_million, output_price_per_million, context_tokens, availability, source_url. Use standard online text-token pricing in USD per 1M tokens, excluding batch discounts, prompt caching prices, tool charges, and third-party platform pricing. Prices must be numeric. If context length or modalities are not stated on this page, return null or an empty array rather than guessing. availability must be live, preview, deprecated, or unknown based only on page wording. source_url must be the public pricing page URL."
 ```
 
 Save the returned `c_*` ID as:
@@ -72,26 +72,26 @@ Save the returned `c_*` ID as:
 BRIGHT_DATA_COLLECTOR_ANTHROPIC
 ```
 
-## 5. Create the Google Gemini collector
+## 5. Create the Groq collector
 
 Target:
 
 ```text
-https://ai.google.dev/gemini-api/docs/pricing
+https://console.groq.com/docs/models
 ```
 
 Command:
 
 ```bash
 npx -p @brightdata/cli bdata scraper create \
-  https://ai.google.dev/gemini-api/docs/pricing \
-  "Return one row per Gemini model or model variant with standard paid-tier pricing. Output exactly these fields: model, modalities, input_price_per_million, output_price_per_million, context_tokens, availability, source_url. For the primary price fields use standard online text input and text output USD per 1M tokens. When prompt-length tiers exist, use the <=200K or lowest standard tier. Do not substitute batch, flex, priority, caching, image-output, audio-only, grounding, or storage prices. Prices must be numeric. Capture modalities only when the page states them. Use null for unstated context length. availability must be live, preview, deprecated, or unknown from explicit page wording. source_url must be the public pricing page URL." 
+  https://console.groq.com/docs/models \
+  "Return one row per model or system shown in the supported-model tables. Output exactly these fields: model, model_id, modalities, input_price_per_million, output_price_per_million, context_tokens, availability, source_url. Use numeric USD per 1M token prices only when the page exposes token pricing. Do not convert per-hour or per-character prices into token prices. context_tokens must be an integer token count when stated. Map production models/systems to production and preview rows to preview. source_url must be the public models page. Leave unsupported or unstated numeric fields null; never invent values."
 ```
 
 Save the returned `c_*` ID as:
 
 ```text
-BRIGHT_DATA_COLLECTOR_GOOGLE
+BRIGHT_DATA_COLLECTOR_GROQ
 ```
 
 ## 6. Verify every collector from the CLI
@@ -103,15 +103,15 @@ npx -p @brightdata/cli bdata scraper run "$BRIGHT_DATA_COLLECTOR_OPENAI" \
 npx -p @brightdata/cli bdata scraper run "$BRIGHT_DATA_COLLECTOR_ANTHROPIC" \
   https://platform.claude.com/docs/en/about-claude/pricing --pretty
 
-npx -p @brightdata/cli bdata scraper run "$BRIGHT_DATA_COLLECTOR_GOOGLE" \
-  https://ai.google.dev/gemini-api/docs/pricing --pretty
+npx -p @brightdata/cli bdata scraper run "$BRIGHT_DATA_COLLECTOR_GROQ" \
+  https://console.groq.com/docs/models --pretty
 ```
 
 Acceptance checks:
 
 1. Output is a JSON array.
 2. Every valid row identifies a model.
-3. Numeric price values are numbers, not decorated strings.
+3. Token-price values are numeric or structured numeric values the normalizer can unwrap.
 4. Missing data is null/empty rather than fabricated.
 5. Keep the returned Collector IDs; do not create replacements simply because the page later changes.
 
@@ -151,7 +151,7 @@ Copy `.env.example` locally or configure the same variables in Vercel:
 BRIGHT_DATA_API_TOKEN=...
 BRIGHT_DATA_COLLECTOR_OPENAI=c_...
 BRIGHT_DATA_COLLECTOR_ANTHROPIC=c_...
-BRIGHT_DATA_COLLECTOR_GOOGLE=c_...
+BRIGHT_DATA_COLLECTOR_GROQ=c_...
 ```
 
 The runtime exposes only provider configuration status and run provenance. It does not send the Bright Data API token to the browser.
@@ -162,7 +162,7 @@ The dashboard uses the same stable collectors through Bright Data's Collection A
 
 1. `POST /api/collectors/run` with `{ "provider": "openai" }`.
 2. SpecShift calls `POST /dca/trigger?collector=c_*&queue_next=1` server-side.
-3. The browser receives the non-secret `j_*` collection ID.
-4. The browser polls `GET /api/collectors/result?provider=openai&collectionId=j_*`.
-5. SpecShift calls `GET /dca/dataset?id=j_*` server-side.
+3. The browser receives the non-secret collection ID.
+4. The browser polls `GET /api/collectors/result?provider=openai&collectionId=...`.
+5. SpecShift calls `GET /dca/dataset?id=...` server-side.
 6. When rows are ready, they are normalized, validated, and marked `ready` or `drift` before reaching the intelligence UI.

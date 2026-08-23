@@ -1,4 +1,4 @@
-export type ProviderSlug = 'openai' | 'anthropic' | 'google'
+export type ProviderSlug = 'openai' | 'anthropic' | 'groq'
 
 export interface ProviderConfig {
   slug: ProviderSlug
@@ -23,12 +23,12 @@ export const PROVIDERS: Record<ProviderSlug, ProviderConfig> = {
     collectorEnv: 'BRIGHT_DATA_COLLECTOR_ANTHROPIC',
     accent: 'amber',
   },
-  google: {
-    slug: 'google',
-    label: 'Google',
-    sourceUrl: 'https://ai.google.dev/gemini-api/docs/pricing',
-    collectorEnv: 'BRIGHT_DATA_COLLECTOR_GOOGLE',
-    accent: 'violet',
+  groq: {
+    slug: 'groq',
+    label: 'Groq',
+    sourceUrl: 'https://console.groq.com/docs/models',
+    collectorEnv: 'BRIGHT_DATA_COLLECTOR_GROQ',
+    accent: 'emerald',
   },
 }
 
