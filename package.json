@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck:server": "tsc -p tsconfig.server.json --noEmit",
-    "verify": "npm test && npm run build && npm run typecheck:server"
+    "typecheck:runtime": "tsc -p tsconfig.runtime.json --noEmit",
+    "verify": "npm test && npm run build && npm run typecheck:server && npm run typecheck:runtime"
   },
   "dependencies": {
     "framer-motion": "^12.23.12",
