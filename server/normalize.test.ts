@@ -35,13 +35,51 @@ describe('normalizeBrightDataRows', () => {
 
   it('does not invent missing numeric values', () => {
     const snapshot = normalizeBrightDataRows('anthropic', 'c_anthropic123', [
-      { model: 'Claude Example', availability: 'preview' },
+      {
+        model: 'Claude Example',
+        input_price_per_million: 3,
+        output_price_per_million: 15,
+        availability: 'preview',
+      },
     ])
 
-    expect(snapshot.models[0].pricing.inputPerMillion).toBeNull()
-    expect(snapshot.models[0].pricing.outputPerMillion).toBeNull()
     expect(snapshot.models[0].limits.contextTokens).toBeNull()
     expect(snapshot.models[0].availability).toBe('preview')
+  })
+
+  it('flattens noisy Anthropic output and keeps one base-price row per real Claude model', () => {
+    const snapshot = normalizeBrightDataRows('anthropic', 'c_anthropic123', [
+      {
+        models: [
+          {
+            model: 'Claude Mythos 5 ( limited availability )',
+            input_price_per_million: 10,
+            output_price_per_million: 50,
+            availability: 'limited',
+            source_url: '[https://platform.claude.com/docs/en/about-claude/pricing](https://platform.claude.com/docs/en/about-claude/pricing)',
+          },
+          {
+            model: 'Claude Opus 5',
+            input_price_per_million: 5,
+            output_price_per_million: 25,
+            availability: 'live',
+          },
+          { model: 'Billing unit', availability: 'live' },
+          { model: 'Cache read (hit)', input_price_per_million: 0.5, availability: 'live' },
+          { model: 'Claude Opus 5', input_price_per_million: 2.5, availability: 'live' },
+          { model: 'Claude Opus 5 / Claude Opus 4.8', input_price_per_million: 10, availability: 'live' },
+        ],
+      },
+    ])
+
+    expect(snapshot.models).toHaveLength(2)
+    expect(snapshot.models.map((model) => model.model)).toEqual(['Claude Mythos 5', 'Claude Opus 5'])
+    expect(snapshot.models[0]).toMatchObject({
+      availability: 'preview',
+      pricing: { inputPerMillion: 10, outputPerMillion: 50 },
+      sourceUrl: 'https://platform.claude.com/docs/en/about-claude/pricing',
+    })
+    expect(snapshot.models[1].pricing).toMatchObject({ inputPerMillion: 5, outputPerMillion: 25 })
   })
 
   it('skips malformed rows that do not identify a model', () => {
