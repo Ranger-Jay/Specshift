@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { BrightDataClient, BrightDataError } from '../../server/brightData'
-import { getCollectorId, isProviderSlug } from '../../server/config'
-import { normalizeBrightDataRows } from '../../server/normalize'
-import { validateSnapshot } from '../../src/lib/validateSnapshot'
+import { BrightDataClient, BrightDataError } from '../../server/brightData.js'
+import { getCollectorId, isProviderSlug } from '../../server/config.js'
+import { normalizeBrightDataRows } from '../../server/normalize.js'
+import { validateSnapshot } from '../../src/lib/validateSnapshot.js'
 
 const firstQueryValue = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value

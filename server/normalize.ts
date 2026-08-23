@@ -1,5 +1,5 @@
-import type { CollectorSnapshot, ModelAvailability, NormalizedModel } from '../src/domain/intelligence'
-import { getProviderConfig, type ProviderSlug } from './config'
+import type { CollectorSnapshot, ModelAvailability, NormalizedModel } from '../src/domain/intelligence.js'
+import { getProviderConfig, type ProviderSlug } from './config.js'
 
 type UnknownRecord = Record<string, unknown>
 

@@ -2,6 +2,20 @@
 
 All notable SpecShift milestones are documented here.
 
+## v0.006.1 — 2026-08-23
+
+### Fixed
+- Corrected Vercel Node ESM runtime failures caused by extensionless local imports in serverless API functions.
+- Updated the production runtime import graph to use explicit `.js` specifiers while retaining TypeScript source resolution.
+
+### CI
+- Added a dedicated NodeNext runtime TypeScript configuration.
+- `npm run verify` now checks the serverless runtime graph under Node ESM module-resolution rules in addition to unit tests, the React production build, and the existing server type check.
+
+### Release verification
+- The hotfix passed the full verification gate, including the new Node ESM runtime type check, before release promotion.
+- No Bright Data credentials, collector IDs, scraping rules, normalized intelligence semantics, or UI behavior changed in this patch.
+
 ## v0.006 — 2026-08-23
 
 ### Changed

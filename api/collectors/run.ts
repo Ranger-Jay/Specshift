@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { BrightDataClient, BrightDataError } from '../../server/brightData'
-import { getCollectorId, getProviderConfig, isProviderSlug } from '../../server/config'
+import { BrightDataClient, BrightDataError } from '../../server/brightData.js'
+import { getCollectorId, getProviderConfig, isProviderSlug } from '../../server/config.js'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store')
