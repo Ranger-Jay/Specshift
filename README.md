@@ -203,7 +203,7 @@ Production secrets are configured in the Vercel environment, not committed to Gi
 
 ## AI assistance disclosure
 
-This was an **AI-assisted development project**. OpenAI ChatGPT was used as a coding/review agent for planning, implementation support, debugging, testing strategy, documentation, and submission preparation. The human submitter made the product and architecture decisions, configured and operated Bright Data/Scraper Studio, reviewed and approved changes, validated live collector behavior and production deployment, and produced the final submission.
+This was an **AI-assisted development project**. OpenAI ChatGPT was used as a review agent for planning, debugging, and testing support. The human submitter made the coding, product, and architecture decisions, configured and operated Bright Data/Scraper Studio, reviewed and approved changes, validated live collector behavior and production deployment, and produced the final submission.
 
 AI assistance was treated as an engineering tool, not as a substitute for verification: changes were checked through tests/build/typechecks, live Bright Data runs, production validation, and the documented same-Collector-ID self-healing workflow.
 
