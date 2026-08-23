@@ -1,0 +1,80 @@
+[
+  {
+    "modalities": [
+      "Text (Input and output)",
+      "Image (Not supported)",
+      "Audio (Input only)",
+      "Video (Not supported)"
+    ],
+    "availability": "live",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-4o-transcribe",
+    "model": "GPT-4o Transcribe",
+    "input_price_per_million": 2.5,
+    "context_tokens": 16000
+  },
+  {
+    "modalities": [
+      "Text (Input and output)",
+      "Image (Input only)",
+      "Audio (Input and output)",
+      "Video (Not supported)"
+    ],
+    "availability": "live",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-realtime-2.1",
+    "model": "GPT-Realtime-2.1",
+    "input_price_per_million": 4,
+    "output_price_per_million": 24,
+    "context_tokens": 128000
+  },
+  {
+    "modalities": [
+      "Text (Input and output)",
+      "Image (Input only)",
+      "Audio (Not supported)",
+      "Video (Not supported)"
+    ],
+    "availability": "live",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-5.6-sol",
+    "model": "GPT-5.6 Sol",
+    "input_price_per_million": 4,
+    "output_price_per_million": 20,
+    "context_tokens": 1050000
+  },
+  {
+    "modalities": [
+      "Text (Input only)",
+      "Image (Not supported)",
+      "Audio (Output only)",
+      "Video (Not supported)"
+    ],
+    "availability": "live",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-4o-mini-tts",
+    "model": "GPT-4o mini TTS",
+    "input_price_per_million": 0.6
+  },
+  {
+    "modalities": [
+      "Text (Input only)",
+      "Image (Input and output)",
+      "Audio (Not supported)",
+      "Video (Not supported)"
+    ],
+    "availability": "live",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-image-2",
+    "model": "GPT-Image-2"
+  },
+  {
+    "modalities": [
+      "Text (Input and output)",
+      "Image (Input only)",
+      "Audio (Not supported)",
+      "Video (Not supported)"
+    ],
+    "availability": "live",
+    "source_url": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+    "model": "GPT-5.6 Luna",
+    "input_price_per_million": 0.2,
+    "output_price_per_million": 1.2,
+    "context_tokens": 1050000
+  }
+]
