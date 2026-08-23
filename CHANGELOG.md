@@ -2,6 +2,29 @@
 
 All notable SpecShift milestones are documented here.
 
+## v0.006-dev — 2026-08-23
+
+### Changed
+- Final live provider set is OpenAI, Anthropic, and Groq.
+- Google Gemini was removed from the active runtime so the deployment matches the collectors actually verified during the hackathon.
+- Fallback/demo provider data now uses plainly labeled demo records rather than invented future-sounding model names.
+- Groq's public supported-model page is the canonical Groq source.
+
+### Added
+- Groq collector configuration through `BRIGHT_DATA_COLLECTOR_GROQ`.
+- Groq normalization for nested numeric values such as `input_price_per_million.value` and `output_price_per_million.value`.
+- `production` lifecycle normalization to SpecShift's canonical `live` availability state.
+
+### Tests
+- Added Groq nested-price, context, production-status, null-price, malformed-row, and not-ready-dataset coverage.
+- Expanded Anthropic noisy-output normalization coverage.
+
+### Documentation
+- Bright Data runbook now reflects the verified OpenAI / Anthropic / Groq collector set.
+
+### Status
+- In development on `feat/final-provider-alignment` until the exact release commit passes CI.
+
 ## v0.005 — 2026-08-22
 
 ### Added
