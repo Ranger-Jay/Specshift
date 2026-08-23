@@ -90,7 +90,7 @@ const candidateRows = (rows: unknown[]): unknown[] => rows.flatMap((value) => {
 })
 
 const cleanAnthropicModel = (value: string): string => value
-  .replace(/\s*\((?:limited availability|retired)[^)]*\)\s*$/i, '')
+  .replace(/\s*\(\s*(?:limited availability|retired)[^)]*\)\s*$/i, '')
   .trim()
 
 const isAnthropicBaseModelRow = (
